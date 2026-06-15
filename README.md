@@ -196,65 +196,121 @@ pause
 3. 确认没有写到 AE01（OTA 口）
 4. 换一个 USB 蓝牙适配器试试（内置蓝牙有时不稳定）
 
+### Q5：电脑和手机都想用，怎么切换？
+
+先停掉电脑的 bridge.py（关闭黑色窗口）
+再用手机网页连接（反之亦然）
+两个中继不能同时运行，否则会抢占设备连接
+
+### Q6：设备连上了但过一会儿自动断开？
+
+电脑：检查系统蓝牙省电设置，关闭「允许计算机关闭此设备以节约电源」
+手机：确认屏幕常亮，不要切换 App
+通用：玩具本身没电也会断开，注意充电
+
+### Q7：能同时控制两个独立地址的设备吗？
+可以，修改 bridge.py 启动两个 BleakClient 并行连接，各自维护一个写入句柄，收到指令后同时发送给两个设备。需要一定 Python 基础，可以参考 bridge.py 里的 ble_loop 逻辑自行扩展。
+
 ---
 
 ### 平台适配
 
 ### Windows（推荐）
-```bash
 pip install bleak requests
 python bridge.py
 要求：Windows 10 1903+ / Windows 11，内置蓝牙或 USB 蓝牙适配器。
 如果 bleak 安装失败：确认 Python 已加入 PATH，用管理员权限运行命令提示符。
 
-macOS
+### macOS
 pip3 install bleak requests
 python3 bridge.py
 要求：macOS 10.15+，首次运行会弹窗请求蓝牙权限，点「允许」。
 注意：部分 M 系列 Mac 需要在「系统设置 → 隐私与安全 → 蓝牙」里手动允许终端。
 
-Linux
+### Linux
 pip3 install bleak requests
 # 需要 BlueZ 5.43+
 sudo python3 bridge.py
 
-Ubuntu / Debian 安装 BlueZ：
+### Ubuntu / Debian 安装 BlueZ：
 sudo apt install bluetooth bluez
 sudo systemctl start bluetooth
 
-部分发行版需要 sudo 才能访问蓝牙，或者把用户加入 bluetooth 组：
+### 部分发行版需要 sudo 才能访问蓝牙，或者把用户加入 bluetooth 组：
 sudo usermod -a -G bluetooth $USER
 
-安卓（网页中继，无需电脑）
+### 安卓（网页中继，无需电脑）
 支持：Chrome 56+ / Edge（基于 Chromium）
 不支持：Firefox、微信内置浏览器、QQ浏览器
 
 步骤：
-
 打开 Chrome，访问中继页面
 点「连接」，弹窗选择 SL278H
 插上充电器 + 开启「充电时保持唤醒」防息屏
 如果弹窗里找不到设备：确认设备已开机，手机蓝牙已打开，距离在 1 米内。
 
-iOS / iPhone
+### iOS / iPhone
 Web Bluetooth API 在 iOS Safari 上不受支持，目前无法用网页中继方案。
 
 可选替代：
-
 借一台安卓手机做中继
 用 Windows / Mac / Linux 电脑运行 bridge.py
 等待 Apple 在未来版本支持 Web Bluetooth（目前无时间表）
-Q5：电脑和手机都想用，怎么切换？
-先停掉电脑的 bridge.py（关闭黑色窗口）
-再用手机网页连接（反之亦然）
-两个中继不能同时运行，否则会抢占设备连接
-Q6：设备连上了但过一会儿自动断开？
-电脑：检查系统蓝牙省电设置，关闭「允许计算机关闭此设备以节约电源」
-手机：确认屏幕常亮，不要切换 App
-通用：玩具本身没电也会断开，注意充电
-Q7：能同时控制两个独立地址的设备吗？
-可以，修改 bridge.py 启动两个 BleakClient 并行连接，各自维护一个写入句柄，收到指令后同时发送给两个设备。需要一定 Python 基础，可以参考 bridge.py 里的 ble_loop 逻辑自行扩展。
 
 ---
+
+## 第七部分：用 Claude.ai 直接控制（MCP 接入）
+
+不需要搭建自己的 PWA，只需要 Claude.ai 账号 + Railway 部署，就能让 AI 控制玩具。
+
+### 原理
+
+Railway 上运行一个 MCP Server，Claude.ai 通过 Integrations 连接它，聊天时 Claude 可以直接调用：
+- `toy_set_speed` — 设置强度
+- `toy_set_pattern` — 设置震动花样
+- `toy_stop` — 停止
+- `toy_status` — 查询是否在线
+
+### 步骤
+
+**第一步：部署 Railway bridge**
+
+1. Fork 本仓库（或单独建一个，把 `bridge/index.js` 放进去）
+2. 在 [railway.app](https://railway.app) 新建项目 → Deploy from GitHub
+3. 设置环境变量：
+
+| 变量 | 说明 |
+|------|------|
+| `BRIDGE_SECRET` | 自己设一个密码，例如 `mysecret123` |
+| `PORT` | Railway 自动填，不用管 |
+
+4. 部署成功后记下你的 Railway 地址，例如：`https://xxx.up.railway.app`
+
+**第二步：启动蓝牙中继**
+
+选一种：
+- **安卓手机**：Chrome 打开 `https://xxx.up.railway.app`（需要在 toy.html 里把地址改成你自己的 Railway）
+- **电脑**：设置环境变量后运行 `python bridge.py`
+
+```bash
+set BRIDGE_URL=https://xxx.up.railway.app
+set BRIDGE_SECRET=mysecret123
+python bridge.py
+
+**第三步：Claude.ai 添加 MCP Integration**
+
+打开 claude.ai → Settings → Integrations
+点 Add Integration
+填入：
+URL：https://xxx.up.railway.app/mcp?secret=mysecret123
+保存
+第四步：开始使用
+
+新建对话，告诉 Claude：
+
+「帮我控制玩具，先查一下是否在线，然后设置强度 50%」
+
+Claude 会自动调用 MCP tool 完成操作。
+
 
 *最后更新：2026-06-15*
