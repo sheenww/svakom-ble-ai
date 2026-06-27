@@ -1,5 +1,5 @@
 """
-SL278H BLE 控制中继
+SX007G BLE 控制中继
 轮询中继服务器取指令，通过蓝牙发送给设备，并每 1.5 秒续命保持运行。
 用法：
   set BRIDGE_URL=https://your-railway-server.up.railway.app
@@ -100,7 +100,7 @@ async def bridge_loop():
 async def ble_loop():
     global client_ref
     while True:
-        log("🔍 扫描 SL278H ...")
+        log("🔍 扫描 SX007G ...")
         devs = await BleakScanner.discover(timeout=6.0)
         dev = next((d for d in devs if d.name and "SL278" in d.name), None)
         if not dev:
