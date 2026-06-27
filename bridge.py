@@ -33,7 +33,7 @@ def cmd_scale_stop():
     return bytes([H, 4, 0, 0, 0, 0, 0xAA])
 
 def cmd_vibrate(mode, level):
-    return bytes([H, 3, 0, 0, max(1,min(8,mode)), max(1,min(5,level)), 0])
+    return bytes([H, 9, 0, 0, max(1,min(8,mode)), max(1,min(5,level)), 0])
 
 def parse_duration(c):
     for k in ["sec", "seconds", "duration"]:
