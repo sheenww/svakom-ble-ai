@@ -62,7 +62,7 @@ async def exec_cmd(c: dict):
         current_cmd = cmd_vibrate(mode, level)
         current_until = parse_duration(c)
         await write(current_cmd); log(f"🌀 花样 {mode} 档"); return
-    val = c.get("speed") or c.get("suck") or c.get("intensity")
+    val = c.get("speed") or c.get("suck") or c.get("intensity") or c.get("value")
     if val is not None:
         if float(val) <= 0:
             current_cmd = None; current_until = 0
