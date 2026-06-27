@@ -102,7 +102,7 @@ async def ble_loop():
     while True:
         log("🔍 扫描 SX007G ...")
         devs = await BleakScanner.discover(timeout=6.0)
-        dev = next((d for d in devs if d.name and "SL278" in d.name), None)
+        dev = next((d for d in devs if d.name and "SX007G" in d.name), None)
         if not dev:
             log("⚠️ 没找到设备，5秒后重试"); await asyncio.sleep(5); continue
         log(f"🔗 连接 {dev.name} ...")
